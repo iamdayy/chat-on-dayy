@@ -23,22 +23,27 @@
 <script lang="ts">
 import { defineComponent } from "vue";
 import socket from "@/services/socketio.service";
-import { user, notifications } from "./types";
-import { notify, notifyMobile } from "@/services/notify.service";
-import { DeviceInfo, isMobile } from "@/services/device.service";
+import { LocalNotificationSchema } from "@capacitor/local-notifications";
+import { user } from "./types";
+import { Notification } from "@/services/notify.service";
+import { DeviceInfo } from "@/services/device.service";
 export default defineComponent({
   components: {},
-  beforeMount() {
+  beforeCreate() {
     this.$store.dispatch("onInit");
   },
   mounted() {
     DeviceInfo();
-    const notifyData: notifications = {
+    const notifyData: LocalNotificationSchema = {
       title: "Welcome To chat on day",
       body: "enjoy your chat",
       id: 1,
+      schedule: {
+        at: new Date(Date.now()),
+      },
     };
-    isMobile ? notifyMobile(notifyData) : notify(notifyData);
+    const notif = new Notification();
+    notif.notifTrigger(notifyData);
     // socket.on("users", (users: user[]) => {
     //   store.state.users = users;
     // });
@@ -48,13 +53,12 @@ export default defineComponent({
     //   });
     // });
     socket.on("addFreind", (user: user) => {
-      const notifyData: notifications = {
-        title: user.username + "Add you to chat",
-        body: "Accept now or decline",
-        id: 1,
-      };
-      isMobile ? notifyMobile(notifyData) : notify(notifyData);
       this.$store.state.me.requestFreind.push(user);
+      notif.notifTrigger({
+        title: "new request freind",
+        body: "You have new request freind from " + user.username,
+        id: 2,
+      });
       this.$store.commit("setToast", {
         visible: true,
         color: "success",
@@ -64,6 +68,11 @@ export default defineComponent({
     socket.on("requestAccepted", (user: user) => {
       this.$store.state.users.push(user);
       const indexUser = this.$store.state.me.requestFreind.indexOf(user);
+      notif.notifTrigger({
+        title: "You have new freind",
+        body: "Your request to freind has accepted, enjoy your chat",
+        id: 3,
+      });
       this.$store.state.me.requestFreind.splice(indexUser, 1);
       this.$store.commit("setToast", {
         visible: true,
@@ -74,11 +83,11 @@ export default defineComponent({
     socket.on("private message", ({ content, from, to }) => {
       for (let i = 0; i < this.$store.state.users.length; i++) {
         const user: user = this.$store.state.users[i];
-        const notifyData: notifications = {
-          title: "you have new message from " + user.username,
-          body: "Check now!",
-          id: 1,
-        };
+        notif.notifTrigger({
+          title: user.username,
+          body: content,
+          id: 4,
+        });
         // const fromSelf = socket.id === from;
         if (user._id === to || from) {
           user.messages.push({
@@ -86,7 +95,6 @@ export default defineComponent({
             content,
             from,
           });
-          isMobile ? notifyMobile(notifyData) : notify(notifyData);
           if (user !== this.$store.state.selectedUser) {
             user.hasNewMessages = true;
           }

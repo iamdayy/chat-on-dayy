@@ -9,7 +9,7 @@ export const store = createStore<State>({
     loggedIn: false,
     loading: false,
     me: {} as user,
-    users: [],
+    users: [] as user[],
     toast: {} as toast,
     modal: null,
     profile: {} as user,
@@ -89,12 +89,13 @@ export const store = createStore<State>({
     },
   },
   actions: {
-    connectIO(context) {
-      const sessionID = context.state.me._id;
-      const username = context.state.me.username;
+    connectIO(context, payload) {
+      const sessionID = payload._id;
+      const username = payload.username;
       if (sessionID) {
-        socket.auth = { sessionID: sessionID, username: username };
+        socket.auth = { sessionID, username };
         socket.connect();
+        console.log("Socket has connect");
       }
     },
     async onInit(context) {
@@ -106,9 +107,12 @@ export const store = createStore<State>({
       const session = localStorage.getItem("refresh_token");
       if (session) {
         try {
-          const signIned = await axios.get("/checkSignIn");
-          if (signIned.data.status) {
-            context.dispatch("getMe");
+          const { data } = await axios.get("/checkSignIn");
+          if (data.status) {
+            context.commit("setMe", data.user);
+            context.commit("setProfile", data.user);
+            context.dispatch("connectIO", data.user);
+            context.commit("setUsers", data.user.freinds);
             context.commit("loggedIn");
             router.push("/");
           }
@@ -119,18 +123,20 @@ export const store = createStore<State>({
     },
     async login(context, payload) {
       try {
-        const user = await axios.post("/login", payload);
-        if (!user.data.status) {
+        const { data } = await axios.post("/login", payload);
+        if (!data.status) {
           return context.commit("setToast", {
             visible: true,
             color: "error",
             title: "Loggin Failed, please try again",
           });
         }
-        context.commit("loggedIn", user.data);
-        context.dispatch("getMe");
-        context.commit("setJWTToken", user.data.token);
-        context.commit("setRefreshToken", user.data.refresh_token);
+        context.commit("loggedIn", data);
+        context.commit("setMe", data.user);
+        context.commit("setProfile", data.user);
+        context.commit("setJWTToken", data.token);
+        context.commit("setRefreshToken", data.refresh_token);
+        context.dispatch("connectIO", data.user);
         context.commit("setToast", {
           visible: true,
           color: "success",
@@ -169,16 +175,24 @@ export const store = createStore<State>({
         });
       }
     },
-    async getMe(context) {
+    async resetPwd(context, payload) {
       try {
-        const profile = await axios.get("/getMe");
-        if (!profile) return;
-        context.commit("setMe", profile.data);
-        context.commit("setProfile", profile.data);
-        context.commit("setUsers", profile.data.freinds);
-        context.dispatch("connectIO");
+        const { data } = await axios.post("reset/" + payload.token, payload);
+        if (!data.status) {
+          context.commit("addToast", {
+            type: "error",
+            message: data.response,
+          });
+        }
+        context.commit("addToast", {
+          type: "success",
+          message: data.response,
+        });
       } catch (error) {
-        console.log(error);
+        context.commit("addToast", {
+          type: "error",
+          message: error,
+        });
       }
     },
     async getProfile(context) {
@@ -190,6 +204,24 @@ export const store = createStore<State>({
         context.commit("setProfile", profile.data);
       } catch (error) {
         console.log(error);
+      }
+    },
+    async getUser(context, payload) {
+      try {
+        const user = await axios.post("/getuser", payload);
+        if (!user.data.status) {
+          return {
+            status: false,
+            message: user.data.message,
+          };
+        } else {
+          return {
+            status: true,
+            user: user.data.usr as user,
+          };
+        }
+      } catch (error) {
+        throw { status: false, user: null };
       }
     },
     async updateProfile(context) {

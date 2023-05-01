@@ -44,6 +44,7 @@
                 :rules="passwordRules"
                 label="Password"
               ></v-text-field>
+              <v-btn variant="plain" to="/recover">Forgot Password?</v-btn>
               <v-btn type="submit" block class="mt-2">Login</v-btn>
             </v-form>
           </v-sheet>

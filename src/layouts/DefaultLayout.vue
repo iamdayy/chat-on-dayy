@@ -1,13 +1,13 @@
 <template>
-  <v-layout>
-    <v-app-bar
+  <VLayout>
+    <VAppBar
       v-if="$route.path === '/chat'"
       :title="userSelected.username"
       color="indigo-darken-3"
       @click="$router.push('/profile')"
     >
       <template v-slot:prepend>
-        <v-avatar
+        <VAvatar
           :image="
             userSelected.avatar ||
             'https://st3.depositphotos.com/6672868/13701/v/600/depositphotos_137014128-stock-illustration-user-profile-icon.jpg'
@@ -15,10 +15,10 @@
           @click.stop="drawer = !drawer"
         />
       </template>
-    </v-app-bar>
-    <v-app-bar v-else :title="me.username" color="indigo-darken-3">
+    </VAppBar>
+    <VAppBar v-else :title="me.username" color="indigo-darken-3">
       <template v-slot:prepend>
-        <v-avatar
+        <VAvatar
           :image="
             me.avatar ||
             'https://st3.depositphotos.com/6672868/13701/v/600/depositphotos_137014128-stock-illustration-user-profile-icon.jpg'
@@ -26,37 +26,70 @@
           @click.stop="drawer = !drawer"
         />
       </template>
-      <v-spacer></v-spacer>
-      <v-btn @click="rightDrawer = true" icon>
-        <v-icon>mdi-account-circle</v-icon></v-btn
+      <VSpacer></VSpacer>
+      <VBtn @click="rightDrawer = true" icon>
+        <VIcon>mdi-account-circle</VIcon></VBtn
       >
-      <v-btn icon v-if="isMobile" @click="startScan">
-        <v-icon>mdi-magnify</v-icon>
-      </v-btn>
-      <v-dialog v-else v-model="dialog" width="auto">
+      <VDialog v-model="dialog" width="auto">
         <template v-slot:activator="{ props }">
-          <v-btn icon v-bind="props">
-            <v-icon>mdi-magnify</v-icon>
-          </v-btn>
+          <VBtn icon v-bind="props">
+            <VIcon>mdi-magnify</VIcon>
+          </VBtn>
         </template>
 
-        <v-card>
-          <v-tabs v-model="tab" bg-color="primary">
-            <v-tab value="scan">Scan</v-tab>
-            <!-- <v-tab value="upload">Upload</v-tab> -->
-          </v-tabs>
-          <v-card-text>
-            <addFreind :tab-props="tab" @decode="dialog = false" />
-          </v-card-text>
-          <v-card-actions>
-            <v-btn color="primary" block @click="dialog = false">Close</v-btn>
-          </v-card-actions>
-        </v-card>
-      </v-dialog>
-    </v-app-bar>
-    <v-navigation-drawer v-model="drawer" temporary>
-      <v-list>
-        <v-list-item
+        <VCard max-width="900">
+          <v-card-title>Search new Freinds</v-card-title>
+          <v-container fluid>
+            <v-row dense>
+              <v-col cols="12">
+                <VCardText>
+                  <VTextField
+                    :loading="loading"
+                    variant="solo"
+                    label="Search with username"
+                    prepend-icon="mdi-qrcode-scan"
+                    append-inner-icon="mdi-magnify"
+                    single-line
+                    hide-details
+                    v-model="search"
+                    @keyup.enter="onClick"
+                    @click:append-inner="onClick"
+                    @click:prepend="startScan"
+                  />
+                  <v-list v-model:opened="showExpand">
+                    <v-list-group value="Users">
+                      <template v-slot:activator="{ props }">
+                        <v-list-item
+                          v-bind="props"
+                          :prepend-avatar="loaded.avatar"
+                          :title="loaded.username"
+                          :subtitle="loaded.email"
+                        ></v-list-item>
+                      </template>
+                      <v-list-item>
+                        <v-btn color="success" @click="openProfile"
+                          >Open profile</v-btn
+                        >
+                        <v-spacer></v-spacer>
+                        <v-btn color="primary" @click="requestFreind"
+                          >Add Freind</v-btn
+                        >
+                      </v-list-item>
+                    </v-list-group>
+                  </v-list>
+                </VCardText>
+              </v-col>
+            </v-row>
+          </v-container>
+          <VCardActions>
+            <VBtn color="primary" block @click="dialog = false">Close</VBtn>
+          </VCardActions>
+        </VCard>
+      </VDialog>
+    </VAppBar>
+    <VNavigationDrawer v-model="drawer" temporary>
+      <VList>
+        <VListItem
           v-if="$route.path === '/chat'"
           :prepend-avatar="
             userSelected.avatar ||
@@ -66,12 +99,12 @@
           nav
         >
           <template v-slot:append>
-            <v-btn variant="text" @click.stop="drawer = !drawer">
-              <v-icon>mdi-chevron-left</v-icon>
-            </v-btn>
+            <VBtn variant="text" @click.stop="drawer = !drawer">
+              <VIcon>mdi-chevron-left</VIcon>
+            </VBtn>
           </template>
-        </v-list-item>
-        <v-list-item
+        </VListItem>
+        <VListItem
           v-else
           :prepend-avatar="
             me.avatar || 'https://randomuser.me/api/portraits/men/85.jpg'
@@ -80,64 +113,62 @@
           nav
         >
           <template v-slot:append>
-            <v-btn variant="text" @click.stop="drawer = !drawer">
-              <v-icon>mdi-chevron-left</v-icon>
-            </v-btn>
+            <VBtn variant="text" @click.stop="drawer = !drawer">
+              <VIcon>mdi-chevron-left</VIcon>
+            </VBtn>
           </template>
-        </v-list-item>
-      </v-list>
+        </VListItem>
+      </VList>
 
-      <v-divider></v-divider>
+      <VDivider></VDivider>
 
-      <v-list v-if="$route.path === '/chat'" density="compact" nav>
-        <router-link
+      <VList v-if="$route.path === '/chat'" density="compact" nav>
+        <RouterLink
           v-for="(list, index) in items"
           :key="index"
           :to="list.to"
           class="text-decoration-none"
         >
-          <v-list-item
+          <VListItem
             :prepend-icon="list.icon"
             :title="list.title"
             value="home"
-          ></v-list-item>
-        </router-link>
-      </v-list>
-      <v-list v-else density="compact" nav>
-        <router-link
+          ></VListItem>
+        </RouterLink>
+      </VList>
+      <VList v-else density="compact" nav>
+        <RouterLink
           v-for="(list, index) in items"
           :key="index"
           :to="list.to"
           class="text-decoration-none"
         >
-          <v-list-item
+          <VListItem
             :prepend-icon="list.icon"
             :title="list.title"
             value="home"
-          ></v-list-item>
-        </router-link>
-      </v-list>
-    </v-navigation-drawer>
-    <v-navigation-drawer v-model="rightDrawer" temporary location="right">
-      <v-list density="compact">
-        <v-list-item
+          ></VListItem>
+        </RouterLink>
+      </VList>
+    </VNavigationDrawer>
+    <VNavigationDrawer v-model="rightDrawer" temporary location="right">
+      <VList density="compact">
+        <VListItem
           v-for="(user, index) in me.requestFreind"
           :key="index"
           :prepend-icon="user.avatar || 'mdi-account-circle'"
           :title="user.username"
           value="home"
-          ><v-list-item-subtitle
-            ><v-btn @click="addFreind(user._id)"
-              >Accept</v-btn
-            ></v-list-item-subtitle
-          ></v-list-item
+          ><VListItemSubtitle
+            ><VBtn @click="addFreind(user._id)">Accept</VBtn></VListItemSubtitle
+          ></VListItem
         >
-      </v-list>
-    </v-navigation-drawer>
-    <v-main>
-      <router-view />
-    </v-main>
-  </v-layout>
+      </VList>
+    </VNavigationDrawer>
+    <VMain>
+      <RouterView />
+    </VMain>
+  </VLayout>
 </template>
 
 <script lang="ts">
@@ -146,16 +177,19 @@ import { store } from "@/store";
 import { isMobile } from "@/services/device.service";
 import { BarcodeScanner } from "@capacitor-community/barcode-scanner";
 import { socket } from "@/services/socketio.service";
-import addFreind from "@/components/addFreind.vue";
+import { user } from "@/types";
+// import addFreind from "@/components/addFreind.vue";
 export default defineComponent({
   name: "DefaultLayout",
-  components: {
-    addFreind,
-  },
+  components: {},
   data() {
     return {
+      showExpand: [""],
       tab: "",
       qr: "",
+      search: "",
+      loading: false,
+      loaded: {} as user,
       isMobile,
       dialog: false,
       drawer: false,
@@ -177,8 +211,22 @@ export default defineComponent({
     },
   },
   methods: {
+    requestFreind() {
+      socket.emit("addFreind", this.loaded);
+      this.$emit("decode");
+      store.commit("setToast", {
+        visible: true,
+        color: "success",
+        title: "Request adding freind success, wait to accepted",
+      });
+    },
     addFreind(v: string) {
       socket.emit("requestAccepted", v);
+      store.commit("setToast", {
+        visible: true,
+        color: "success",
+        title: "New freind was Accepted, enjoy your chatting with new freind",
+      });
     },
     async startScan() {
       await BarcodeScanner.checkPermission({ force: true });
@@ -193,25 +241,38 @@ export default defineComponent({
         socket.emit("addFreind", result.content); // log the raw scanned content
       }
     },
-    // async onDetect(
-    //   promise: // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    //   | PromiseLike<{ content: any; location: any }>
-    //     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    //     | { content: any; location: any }
-    // ) {
-    //   try {
-    //     const {
-    //       content, // decoded String
-    //       location, // QR code coordinates
-    //     } = await promise;
-    //     console.log({ content, location });
-
-    //     // ...
-    //   } catch (error) {
-    //     // ...
-    //     console.log(error);
-    //   }
-    // },
+    async onClick() {
+      this.loading = true;
+      try {
+        const user = await this.$store.dispatch("getUser", {
+          username: this.search,
+        });
+        if (!user.status) {
+          this.loading = false;
+          this.$store.commit("setToast", {
+            visible: true,
+            color: "error",
+            title: user.message,
+          });
+        } else {
+          this.loading = false;
+          this.loaded = user.user;
+        }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } catch (error: any) {
+        console.log(error);
+        this.loading = false;
+        this.$store.commit("setToast", {
+          visible: true,
+          color: "error",
+          title: error.message,
+        });
+      }
+    },
+    openProfile() {
+      this.$store.state.selectedUser = this.loaded;
+      this.$router.push("/profile");
+    },
   },
 });
 </script>

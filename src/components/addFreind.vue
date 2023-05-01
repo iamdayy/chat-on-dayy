@@ -3,6 +3,9 @@
     <v-window-item value="scan">
       <StreamBarcodeReader v-if="mounted" @decode="onDecoded" />
     </v-window-item>
+    <v-window-item value="upload">
+      <ImageBarcodeReader v-if="mounted" @decode="onDecoded" @error="onError" />
+    </v-window-item>
   </v-window>
   <v-dialog v-model="dialog" width="auto">
     <v-card>
@@ -21,13 +24,14 @@
 
 <script lang="ts">
 import { defineComponent } from "vue";
-import { StreamBarcodeReader } from "vue-barcode-reader";
+import { StreamBarcodeReader, ImageBarcodeReader } from "vue-barcode-reader";
 import { store } from "@/store";
 import socket from "@/services/socketio.service";
 export default defineComponent({
   name: "addHero",
   components: {
     StreamBarcodeReader,
+    ImageBarcodeReader,
   },
   data() {
     return {
@@ -58,6 +62,9 @@ export default defineComponent({
     onDecoded(v: string) {
       this.userAdded = v;
       this.dialog = true;
+    },
+    onError(v: string) {
+      console.log(v);
     },
   },
   mounted() {

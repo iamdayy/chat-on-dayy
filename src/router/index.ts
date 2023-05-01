@@ -1,6 +1,8 @@
 import { createRouter, createWebHistory, RouteRecordRaw } from "vue-router";
 import DefaultLayout from "@/layouts/DefaultLayout.vue";
 import authPage from "@/views/authPage.vue";
+import verifyPage from "@/views/verifyPage.vue";
+import recoverPage from "@/views/recoverPage.vue";
 import AllUsers from "@/views/AllUsers.vue";
 import UserChat from "@/views/UserChat.vue";
 import editProfile from "@/views/editProfile.vue";
@@ -51,6 +53,16 @@ const routes: Array<RouteRecordRaw> = [
     path: "/auth",
     name: "auth",
     component: authPage,
+  },
+  {
+    path: "/verify/:token",
+    name: "Verify",
+    component: verifyPage,
+  },
+  {
+    path: "/recover",
+    name: "Recover",
+    component: recoverPage,
   },
 ];
 

@@ -1,33 +1,38 @@
-import { LocalNotifications } from "@capacitor/local-notifications";
-import { notifications } from "@/types";
+import {
+  LocalNotifications,
+  LocalNotificationSchema,
+} from "@capacitor/local-notifications";
+import { Capacitor } from "@capacitor/core";
+import { isMobile } from "./device.service";
+class Notification {
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  constructor() {
+    this.requestPermission();
+  }
 
-const notify = async (payload: notifications) => {
-  const canSend = await LocalNotifications.requestPermissions();
-  //   await LocalNotifications.registerActionTypes({
-  //     types: [
-  //       {
-  //         id: "msgRes",
-  //         actions: [
-  //           {
-  //             id: "dismiss",
-  //             title: "Dismiss",
-  //             destructive: true,
-  //           },
-  //           {
-  //             id: "open",
-  //             title: "Open app",
-  //           },
-  //           {
-  //             id: "respond",
-  //             title: "Respond",
-  //             input: true,
-  //           },
-  //         ],
-  //       },
-  //     ],
-  //   });
-  if (canSend) {
-    await LocalNotifications.schedule({
+  private async requestPermission() {
+    if (Capacitor.getPlatform() !== "web") {
+      await LocalNotifications.requestPermissions();
+    }
+  }
+
+  notifTrigger(payload: LocalNotificationSchema) {
+    isMobile ? this.notifyMobile(payload) : this.notify(payload);
+  }
+
+  private notifyMobile(payload: LocalNotificationSchema) {
+    LocalNotifications.schedule({
+      notifications: [
+        {
+          title: payload.title,
+          body: payload.body,
+          id: 1,
+        },
+      ],
+    });
+  }
+  private notify(payload: LocalNotificationSchema) {
+    LocalNotifications.schedule({
       notifications: [
         {
           title: payload.title,
@@ -37,50 +42,6 @@ const notify = async (payload: notifications) => {
       ],
     });
   }
-};
-const notifyMobile = async (payload: notifications) => {
-  const canSend = await LocalNotifications.requestPermissions();
-  await LocalNotifications.registerActionTypes({
-    types: [
-      {
-        id: "msgRes",
-        actions: [
-          {
-            id: "dismiss",
-            title: "Dismiss",
-            destructive: true,
-          },
-          {
-            id: "open",
-            title: "Open app",
-          },
-          {
-            id: "respond",
-            title: "Respond",
-            input: true,
-          },
-        ],
-      },
-    ],
-  });
-  if (canSend) {
-    await LocalNotifications.addListener(
-      "localNotificationActionPerformed",
-      (notification) => {
-        console.log(notification);
-      }
-    );
-    await LocalNotifications.schedule({
-      notifications: [
-        {
-          title: payload.title,
-          body: payload.body,
-          id: payload.id,
-          actionTypeId: "msgRes",
-        },
-      ],
-    });
-  }
-};
+}
 
-export { notify, notifyMobile };
+export { Notification };

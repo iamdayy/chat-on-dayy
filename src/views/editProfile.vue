@@ -36,7 +36,11 @@
           </v-dialog>
         </div>
       </v-sheet>
-      <qrcode-vue :value="$store.state.profile._id" :size="300" level="H" />
+      <qrcode-vue
+        :value="$store.state.profile.username"
+        :size="300"
+        level="H"
+      />
     </v-card-title>
     <v-card-text>
       <v-text-field

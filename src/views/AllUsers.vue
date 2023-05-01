@@ -25,7 +25,7 @@ export default defineComponent({
   name: "AllUsersPage",
   computed: {
     users(): user[] {
-      return store.state.users.sort((a, b) => {
+      return store.state.users?.sort((a, b) => {
         if (a.self) return -1;
         if (b.self) return 1;
         if (a.username < b.username) return -1;
